@@ -1,0 +1,48 @@
+# Edit this file to introduce tasks to be run by cron.
+# 
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+# 
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').# 
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+# 
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+# 
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+# 
+# For more information see the manual pages of crontab(5) and cron(8)
+# 
+# m h  dom mon dow   command
+
+# The following entries will search for trips from GDL to HND and NRT every hour.
+5 0 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 60 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 2 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 61 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 4 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 62 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 6 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 63 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 8 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 64 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 10 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 65 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 12 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 66 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 14 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 67 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 16 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 68 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 18 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 69 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 20 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 70 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 22 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination NRT --duration 14 --delay 71 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 1 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 60 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 3 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 61 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 5 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 62 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 7 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 63 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 9 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 64 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 11 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 65 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 13 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 66 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 15 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 67 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 17 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 68 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 19 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 69 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 21 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 70 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
+5 23 * * * python /home/ark/fun/python/qpx/qpx.py --origin GDL --destination HND --duration 14 --delay 71 --solutions 3 --adult 1 --maxPrice MXN15000 >> /home/ark/fun/python/qpx/qpxLog.txt
