@@ -43,8 +43,9 @@
  Revision history:
 	Author:		Date:		Notes:
 	Alan		2016-06-08	Added this header.
-	Alan        2016-06-11	Separated everything into functions.
+	Alan		2016-06-11	Separated everything into functions.
 	Alan		2016-08-11	Replaced getopt with argparse.
+	Alan		2016-08-16	Improved the sendEmail function.
 '''
 
 import requests							# To get results from QPX.
@@ -60,7 +61,6 @@ APIKEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 google_url = "https://www.googleapis.com/qpxExpress/v1/trips/search?key="+APIKEY
 headers = {'content-type': 'application/json'}
 qpx_home = "/opt/qpx/"
-responseCount = 0
 resultsMessage = ""
 global destinationCity
 global originCity
@@ -72,53 +72,62 @@ subjectOriginAirportCity = ""
 subjectDestinationAirportCity = ""
 # Variables for sending notification email.
 smtpServer = "localhost"					# The hostname of the SMTP server.
-emailFrom = "QPXsearcher@localhost"					# Sender address.
-# TODO: Add a try statement here and move it to sendEmail()
-emailFile = open(qpx_home + "mailList.txt", "r+")	# Dist. list, one address per line.
-emailTo = emailFile.readlines()
-emailFile.close()  # Close file after reading the email recipients.
+emailFrom = "QPXsearcher@localhost"			# Sender address.
 
 
 # Send email with results.
-def sendEmail(resultsMessage,originCity,destinationCity,saleTotal):
+def send_email(resultsMessage,originCity,destinationCity,saleTotal):
+	try:
+		emailFile = open(qpx_home + "mailList.txt", "r+")   # Dist. list, 1 address per line.
+		emailTo = emailFile.readlines()
+		emailFile.close()  # Close file after reading the email recipients.
+	except Exception as exception:
+		print "ERROR: Unable to open email recipients file.", exception
+		sys.exit(1)
 	msg = MIMEText(resultsMessage,"plain")
 	emailSubject = "Flights found: "+originCity+" to "+destinationCity+", "+destinationCity+" to "+originCity+" for "+saleTotal+" or less."
 	msg["Subject"] = emailSubject
 	s = smtplib.SMTP(smtpServer)
-	s.sendmail(emailFrom, emailTo, msg.as_string())
-	s.quit()
+	try:
+		s.sendmail(emailFrom, emailTo, msg.as_string())
+		s.quit()
+	except Exception as exception:
+		print "ERROR: Unable to send notification email.", exception
+		sys.exit(1)
+	print "Sucess! Notification email sent."
+	sys.exit(0)
 
 
 def get_args(argv):
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-o","--origin",
-						help = "Origin IATA airport code.",
-						dest = "origin",
-						required = True)
+		help = "Origin IATA airport code.",
+		dest = "origin",
+		required = True)
 	parser.add_argument("-d","--destination",
-						help = "Destination IATA airport code.",
-						dest = "destination",
-						required = True)
+		help = "Destination IATA airport code.",
+		dest = "destination",
+		required = True)
 	parser.add_argument("-D","--duration",
-						help = "The duration in days of the travel (for round trips). Default is 7.",
-						dest = "duration",
-						default = "7")
+		help = "The duration in days of the travel (for round trips). Default is 7.",
+		dest = "duration",
+		default = "7")
 	parser.add_argument("-t","--delay",
-						help = "Number of days in the future to start searching for trips (highly recommended).",
-						dest = "delay",
-						default = "0")
+		help = "Number of days in the future to start searching for trips (highly recommended).",
+		dest = "delay",
+		default = "0")
 	parser.add_argument("-s","--solutions",
-						help = "Maximum number of solutions that the program will attempt to find. Default is 3.",
-						dest = "solutions",
-						default = "3")
+		help = "Maximum number of solutions that the program will attempt to find. Default is 3.",
+		dest = "solutions",
+		default = "3")
 	parser.add_argument("-a","--adults",
-						help = "Number of adult passengers for the trip.",
-						dest = "adults",
-						default = "1")
+		help = "Number of adult passengers for the trip.",
+		dest = "adults",
+		default = "1")
 	parser.add_argument("-P","--maxprice",
-						help = "The maximum allowed total price for the entire travel.",
-						dest = "maxprice",
-						required = True)
+		help = "The maximum allowed total price for the entire travel.",
+		dest = "maxprice",
+		required = True)
 	args = parser.parse_args()
 	main(args.origin, args.destination, args.duration, args.delay, args.solutions, args.adults, args.maxprice)
 
@@ -138,7 +147,7 @@ def main(origin1, destination1, duration, delay, solutions, adults, max_price):
 
 	# The status code should be 200 (success). Catch anything else and handle.
 	if response.status_code != 200:
-		print "FATAL ERROR: The response status code is:",response.status_code
+		print "FATAL ERROR: The response status code is:", response.status_code
 
 	# Check if we don't have an empty result set.
 	try:
@@ -193,7 +202,7 @@ def main(origin1, destination1, duration, delay, solutions, adults, max_price):
 				resultsMessage += "Arrival time: "+leg["arrivalTime"]+"\n"
 		resultsMessage += "Total price: "+trip["saleTotal"]+"\n"
 		resultsMessage += "__________________________________________\n"
-	sendEmail(resultsMessage,subjectOriginCity,subjectDestinationCity,trip["saleTotal"])
+	send_email(resultsMessage,subjectOriginCity,subjectDestinationCity,trip["saleTotal"])
 
 
 if __name__ == "__main__":
