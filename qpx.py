@@ -45,22 +45,18 @@
 	Alan		2016-06-08	Added this header.
 	Alan		2016-06-11	Separated everything into functions.
 	Alan		2016-08-11	Replaced getopt with argparse.
-	Alan		2016-08-16	Improved the sendEmail function.
+	Alan		2016-08-16	Improved the send_email function.
+	Alan		2016-08-21	Now we read config values from an external file.
 '''
 
-import requests							# To get results from QPX.
-import json
 import sys
-from email.mime.text import MIMEText	# Some email modules we'll need.
-import smtplib							# For the actual email sending.
-from datetime import date, datetime, timedelta  # Date handling
+import json
+import smtplib
+import requests  # To get results from QPX.
 import argparse  # To get arguments from CLI.
+from email.mime.text import MIMEText  # Some email modules we'll need.
+from datetime import date, datetime, timedelta  # Date handling
 
-
-APIKEY = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-google_url = "https://www.googleapis.com/qpxExpress/v1/trips/search?key="+APIKEY
-headers = {'content-type': 'application/json'}
-qpx_home = "/opt/qpx/"
 resultsMessage = ""
 global destinationCity
 global originCity
@@ -70,20 +66,38 @@ subjectDestinationCity = ""
 subjectOriginCity = ""
 subjectOriginAirportCity = ""
 subjectDestinationAirportCity = ""
-# Variables for sending notification email.
-smtpServer = "localhost"					# The hostname of the SMTP server.
-emailFrom = "QPXsearcher@localhost"			# Sender address.
+
+# Configuration file.
+config_file = "/opt/qpx/config.json"
+# Request headers.
+headers = {'content-type': 'application/json'}
+
+def read_config():
+	# Open the config JSON file.
+	try:
+		config = open(config_file,"r+")
+		readable_config = json.load(config)
+		config.close()
+	except Exception as exception:
+		print "ERROR: Unable to read configuration file.", config_file, exception
+		sys.exit(1)
+	# TODO: Validate that the JSON config is in a valid JSON format.
+	# Assign the configuration values to global variables.
+	global emailFrom
+	global smtpServer
+	global emailTo
+	global qpx_home
+	global google_url
+	emailFrom = readable_config["notification"]["sender"]
+	smtpServer = readable_config["notification"]["SMTP_server"]
+	emailTo = readable_config["notification"]["recipients"]["email"]
+	qpx_home = readable_config["home"]
+	# Concatenate the Google QPX API base URL with my API key.
+	google_url = readable_config["QPX_URL"] + readable_config["API_KEY"]
 
 
 # Send email with results.
 def send_email(resultsMessage,originCity,destinationCity,saleTotal):
-	try:
-		emailFile = open(qpx_home + "mailList.txt", "r+")   # Dist. list, 1 address per line.
-		emailTo = emailFile.readlines()
-		emailFile.close()  # Close file after reading the email recipients.
-	except Exception as exception:
-		print "ERROR: Unable to open email recipients file.", exception
-		sys.exit(1)
 	msg = MIMEText(resultsMessage,"plain")
 	emailSubject = "Flights found: "+originCity+" to "+destinationCity+", "+destinationCity+" to "+originCity+" for "+saleTotal+" or less."
 	msg["Subject"] = emailSubject
@@ -94,11 +108,12 @@ def send_email(resultsMessage,originCity,destinationCity,saleTotal):
 	except Exception as exception:
 		print "ERROR: Unable to send notification email.", exception
 		sys.exit(1)
-	print "Sucess! Notification email sent."
+	print "Success! Notification email sent."
 	sys.exit(0)
 
 
 def get_args(argv):
+	# TODO: Make it able to look for specific dates.
 	parser = argparse.ArgumentParser()
 	parser.add_argument("-o","--origin",
 		help = "Origin IATA airport code.",
@@ -206,4 +221,7 @@ def main(origin1, destination1, duration, delay, solutions, adults, max_price):
 
 
 if __name__ == "__main__":
+	# Read configuration values from external config file.
+	read_config()
+	# Parse arguments from the CLI.
 	get_args(sys.argv[1:])
