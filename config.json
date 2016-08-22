@@ -1,0 +1,13 @@
+{
+	"notification": {
+		"sender": "QPXsearcher@example.com",
+		"recipients": {
+			"name": "Mister Example",
+			"email": "MrExample@example.com"
+		},
+		"SMTP_server": "localhost"
+	},
+	"QPX_URL": "https://www.googleapis.com/qpxExpress/v1/trips/search?key=",
+	"API_KEY": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+	"home": "/opt/qpx/"
+}
