@@ -103,6 +103,9 @@ def read_config():
     google_url = readable_config["QPX_URL"] + readable_config["API_KEY"]
 
 
+# TODO: Sent others kind of notifications (SMS?, Whatsapp?, Telegram?, A page?)
+
+
 # Send email with results.
 def send_email(resultsMessage,originCity,destinationCity,saleTotal):
     msg = MIMEText(resultsMessage,"plain")
@@ -115,7 +118,7 @@ def send_email(resultsMessage,originCity,destinationCity,saleTotal):
     except Exception as exception:
         print "ERROR: Unable to send notification email.", exception
         sys.exit(1)
-    print "INFO: Success! Notification email sent to:", emailTo
+    print "INFO: Success! Notification email sent to:", emailTo, "Message:", resultsMessage
     sys.exit(0)
 
 
