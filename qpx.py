@@ -50,6 +50,8 @@
     Alan        2017-05-13  Changed indentation to spaces.
                             Added some readability improvements.
                             Fixed one-way trip process.
+    Alan        2017-05-23  Added the -x/--date option, which allows to look 
+                            for specific dates.
 '''
 
 import sys
@@ -118,12 +120,12 @@ def send_email(resultsMessage,originCity,destinationCity,saleTotal):
     except Exception as exception:
         print "ERROR: Unable to send notification email.", exception
         sys.exit(1)
-    print "INFO: Success! Notification email sent to:", emailTo, "Message:", resultsMessage
+    print "INFO: Success! Notification email sent to:", emailTo
+    print "Message:", resultsMessage
     sys.exit(0)
 
 
 def get_args(argv):
-    # TODO: Make it able to look for specific dates.
     parser = argparse.ArgumentParser()
     parser.add_argument("-o","--origin",
         help = "Origin IATA airport code.",
@@ -133,6 +135,11 @@ def get_args(argv):
         help = "Destination IATA airport code.",
         dest = "destination",
         required = True)
+    parser.add_argument("-x","--date",
+        help = "Departure date in YYYY-MM-DD",
+        dest = "date",
+        default = False,
+        required = False)
     parser.add_argument("-D","--duration",
         help = "The duration in days of the travel (for round trips). Default is 7.",
         dest = "duration",
@@ -155,12 +162,19 @@ def get_args(argv):
         dest = "maxprice",
         required = True)
     args = parser.parse_args()
-    main(args.origin, args.destination, args.duration, args.delay, args.solutions, args.adults, args.maxprice)
+    main(args.origin, args.destination, args.date, args.duration, args.delay, args.solutions, args.adults, args.maxprice)
 
 
-def main(origin1, destination1, duration, delay, solutions, adults, max_price):
+def main(origin1, destination1, date, duration, delay, solutions, adults, max_price):
     global resultsMessage
-    date1 = date.today() + timedelta(days=int(delay))
+
+    if date:
+        # If an specific date was supplied, use it.
+        date1 = date
+    else:
+        # If an specific travel date was not provided, use only the delay 
+        # days counting from today().
+        date1 = date.today() + timedelta(days=int(delay))
 
     # If we are searching for a round trip...
     if duration:
