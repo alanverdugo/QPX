@@ -6,7 +6,38 @@ In other words, this program can be used to looks for cheap flights. You provide
 Does it work? Yes, once it is properly configured, it works extremelly well. It already saved me a lot of money by finding a cheap flight to Tokyo, and to this day it is still sending me alerts about cheap flights.
 
 ## How can I use it?
-First of all, I am aware that this project is not very user friendly (that should change later). It is not a web or mobile application. For now, it is just a script that will send emails to you when your conditions are met. It can be very useful, but for now you will have to make some things in order to use it.
+First of all, I am aware that this project is not very user friendly (that should change later). It is not a web or mobile application. For now, it is just a script that will send emails to you when your conditions are met. It can be very useful, but for now you will have to do some things in order to use it. The following is the basic usage:
+
+Usage:
+   
+    python qpx.py [-h] -o ORIGIN -d DESTINATION [-D DURATION] [-t DELAY]
+            [-s SOLUTIONS] [-a ADULTS] -P MAXPRICE
+    
+    Example:
+    
+        python qpx.py --origin GDL --destination CUU --duration 30 --delay 30
+        --solutions 3 --adult 1 --maxPrice USD55000
+
+Arguments:
+
+    -h, --help            show this help message and exit
+    -o ORIGIN, --origin ORIGIN
+                          Origin IATA airport code.
+    -d DESTINATION, --destination DESTINATION
+                        Destination IATA airport code.
+    -D DURATION, --duration DURATION
+                        The duration in days of the travel (for round trips).
+                        Default is 7.
+    -t DELAY, --delay DELAY
+                        Number of days in the future to start searching for
+                        trips (highly recommended).
+    -s SOLUTIONS, --solutions SOLUTIONS
+                        Maximum number of solutions that the program will
+                        attempt to find. Default is 3.
+    -a ADULTS, --adults ADULTS
+                        Number of adult passengers for the trip.
+    -P MAXPRICE, --maxprice MAXPRICE
+                        The max total price for the entire travel. Preceded by currency code (USD, MXN, etc)
 
 ## Requirements.
 - A valid QPX API key.
