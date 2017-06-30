@@ -32,7 +32,8 @@
   -a ADULTS, --adults ADULTS
                         Number of adult passengers for the trip.
   -P MAXPRICE, --maxprice MAXPRICE
-                        The max total price for the entire travel. Preceded by currency code (USD, MXN, etc)
+                        The max total price for the entire travel. Preceded by 
+                        currency code (USD, MXN, etc)
 
  Author:
     Alan Verdugo (alan@kippel.net)
@@ -52,34 +53,54 @@
                             Fixed one-way trip process.
     Alan        2017-05-23  Added the -x/--date option, which allows to look 
                             for specific dates.
+    Alan        2017-06-30  Minor improvements
 '''
 
+# Mainly for path handling.
+import os
+
+# Return code management.
 import sys
+
+# JSON parsing.
 import json
+
+# Email functionality.
 import smtplib
+
 # To get results from QPX.
 import requests
+
 # To get arguments from CLI.
 import argparse
+
 # Some email modules we'll need.
 from email.mime.text import MIMEText
-# Date handling
+
+# Date handling.
 from datetime import date, datetime, timedelta
 
-resultsMessage = ""
-global destinationCity
-global originCity
-global subjectDestinationCity
-global subjectOriginCity
-subjectDestinationCity = ""
-subjectOriginCity = ""
-subjectOriginAirportCity = ""
-subjectDestinationAirportCity = ""
+# Log management.
+import logging
+
+
+results_message = []
+results_message_string = ""
+global destination_city
+global origin_city
+global subject_destination_city
+global subject_origin_city
+subject_destination_city = ""
+subject_origin_city = ""
+subject_origin_airport_city = ""
+subject_destination_airport_city = ""
 
 # Configuration file.
-config_file = "/opt/qpx/config.json"
+config_file = os.path.join("/opt", "qpx", "config.json")
+
 # Request headers.
 headers = {'content-type': 'application/json'}
+
 
 def read_config():
     # Open the config JSON file.
@@ -92,14 +113,14 @@ def read_config():
         sys.exit(1)
     # TODO: Validate that the JSON config is in a valid JSON format.
     # Assign the configuration values to global variables.
-    global emailFrom
-    global smtpServer
-    global emailTo
+    global email_from
+    global smtp_server
+    global email_to
     global qpx_home
     global google_url
-    emailFrom = readable_config["notification"]["sender"]
-    smtpServer = readable_config["notification"]["SMTP_server"]
-    emailTo = readable_config["notification"]["recipients"]["email"]
+    email_from = readable_config["notification"]["sender"]
+    smtp_server = readable_config["notification"]["SMTP_server"]
+    email_to = readable_config["notification"]["recipients"]["email"]
     qpx_home = readable_config["home"]
     # Concatenate the Google QPX API base URL with my API key.
     google_url = readable_config["QPX_URL"] + readable_config["API_KEY"]
@@ -109,20 +130,22 @@ def read_config():
 
 
 # Send email with results.
-def send_email(resultsMessage,originCity,destinationCity,saleTotal):
-    msg = MIMEText(resultsMessage,"plain")
-    emailSubject = "Flights found: "+originCity+" to "+destinationCity+", "+destinationCity+" to "+originCity+" for "+saleTotal+" or less."
-    msg["Subject"] = emailSubject
-    s = smtplib.SMTP(smtpServer)
+def send_email(results_message, origin_city, destination_city, sale_total):
+    msg = MIMEText(results_message,"plain")
+    email_subject = "Flights found: {0} to {1} for {2} or "\
+    	"less".format(destination_city, origin_city, sale_total)
+    msg["subject_"] = email_subject
+    s = smtplib.SMTP(smtp_server)
     try:
-        s.sendmail(emailFrom, emailTo, msg.as_string())
+        s.sendmail(email_from, email_to, msg.as_string())
         s.quit()
     except Exception as exception:
         print "ERROR: Unable to send notification email.", exception
         sys.exit(1)
-    print "INFO: Success! Notification email sent to:", emailTo
-    print "Message:", resultsMessage
-    sys.exit(0)
+    else:
+    	print "INFO: Success! Notification email sent to:", email_to
+    	print "Message:", results_message
+    	sys.exit(0)
 
 
 def get_args(argv):
@@ -141,16 +164,19 @@ def get_args(argv):
         default = False,
         required = False)
     parser.add_argument("-D","--duration",
-        help = "The duration in days of the travel (for round trips). Default is 7.",
+        help = "The duration in days of the travel (for round trips)."\
+        	"Default is 7.",
         dest = "duration",
         default = False,
         required = False)
     parser.add_argument("-t","--delay",
-        help = "Number of days in the future to start searching for trips (highly recommended).",
+        help = "Number of days in the future to start searching for trips "\
+        	"(highly recommended).",
         dest = "delay",
         default = "0")
     parser.add_argument("-s","--solutions",
-        help = "Maximum number of solutions that the program will attempt to find. Default is 3.",
+        help = "Maximum number of solutions that the program will attempt to "\
+        	"find. Default is 3.",
         dest = "solutions",
         default = "3")
     parser.add_argument("-a","--adults",
@@ -158,19 +184,22 @@ def get_args(argv):
         dest = "adults",
         default = "1")
     parser.add_argument("-P","--maxprice",
-        help = "The max total price for the entire travel. Preceded by currency code (USD, MXN, etc)",
+        help = "The max total price for the entire travel. Preceded by "\
+        	"currency code (USD, MXN, etc)",
         dest = "maxprice",
         required = True)
     args = parser.parse_args()
-    main(args.origin, args.destination, args.date, args.duration, args.delay, args.solutions, args.adults, args.maxprice)
+    main(args.origin, args.destination, args.date, args.duration, args.delay, 
+    	args.solutions, args.adults, args.maxprice)
 
 
-def main(origin1, destination1, date, duration, delay, solutions, adults, max_price):
-    global resultsMessage
+def main(origin1, destination1, mydate, duration, delay, solutions, adults, 
+	max_price):
+    global results_message
 
-    if date:
+    if mydate:
         # If an specific date was supplied, use it.
-        date1 = date
+        date1 = mydate
     else:
         # If an specific travel date was not provided, use only the delay 
         # days counting from today().
@@ -198,65 +227,71 @@ def main(origin1, destination1, date, duration, delay, solutions, adults, max_pr
 
     # The status code should be 200 (success). Catch anything else and handle.
     if response.status_code != 200:
-        print "FATAL ERROR: The response status code is:", response.status_code
+        print "FATAL ERROR: The response status code is:", response.status_code, response.reason
         sys.exit(1)
 
     # Check if we don't have an empty result set.
     try:
-        readableResponse = response.json()
+        readable_response = response.json()
     except ValueError:
         print datetime.today(), "ERROR: Empty result set. Payload:", payload
         sys.exit(2)
 
     # Check if there were no travel options returned.
     try:
-        carrierList = readableResponse["trips"]["data"]["carrier"]
-        airportList = readableResponse["trips"]["data"]["airport"]
-        cityList = readableResponse["trips"]["data"]["city"]
+        carrier_list = readable_response["trips"]["data"]["carrier"]
+        airport_list = readable_response["trips"]["data"]["airport"]
+        city_list = readable_response["trips"]["data"]["city"]
     except KeyError:
-        print datetime.today(), "WARNING: There were no results found for your request. Payload:", payload
+        print datetime.today(), "WARNING: There were no results found for "\
+        	"your request. Payload:", payload
         sys.exit(3)
 
     # Parse the response from the Google API.
-    for trip in readableResponse["trips"]["tripOption"]:
+    for trip in readable_response["trips"]["tripOption"]:
         for slices in trip["slice"]:
             for segment in slices["segment"]:
-                resultsMessage += "------------------\n"
-                carrierCode = segment["flight"]["carrier"]
-                flightNumber = segment["flight"]["number"]
-                for carrier in carrierList:
-                    if carrier["code"]  == carrierCode:
-                        carrierName = carrier["name"]
-                resultsMessage += "Flight number: "+flightNumber+" Carrier: "+carrierName+" ("+carrierCode+")\n"
+                results_message.append("------------------")
+                carrier_code = segment["flight"]["carrier"]
+                flight_number = segment["flight"]["number"]
+                for carrier in carrier_list:
+                    if carrier["code"]  == carrier_code:
+                        carrier_name = carrier["name"]
+                results_message.append("Flight number: "+flight_number+" Carrier: "+carrier_name+" ("+carrier_code+")")
                 for leg in segment["leg"]:
                     # Get all the NAMES of the airports that we need from 
                     # our list of airport CODES.
-                    for airport in airportList:
+                    for airport in airport_list:
                         if leg["origin"] == airport["code"]:
-                            originAirportCity = airport["city"]
+                            origin_airport_city = airport["city"]
                         if leg["destination"] == airport["code"]:
-                            destinationAirportCity = airport["city"]
+                            destination_airport_city = airport["city"]
                         if origin1 == airport["code"]:
-                            subjectOriginAirportCity = airport["city"]
+                            subject_origin_airport_city = airport["city"]
                         if destination1 == airport["code"]:
-                            subjectDestinationAirportCity = airport["city"]
+                            subject_destination_airport_city = airport["city"]
                     # Get all the NAMES of the cities that we need from 
                     # our list of city CODES.
-                    for city in cityList:
-                        if originAirportCity == city["code"]:
-                            originCity = city["name"]
-                        if destinationAirportCity == city["code"]:
-                            destinationCity = city["name"]
-                        if subjectOriginAirportCity == city["code"]:
-                            subjectOriginCity = city["name"]
-                        if subjectDestinationAirportCity == city["code"]:
-                            subjectDestinationCity = city["name"]
-                resultsMessage += "Origin: "+originCity+" ("+leg["origin"]+") -> Destination: "+destinationCity+" ("+leg["destination"]+")"+"\n"
-                resultsMessage += "Departure time: "+leg["departureTime"]+"\n"
-                resultsMessage += "Arrival time: "+leg["arrivalTime"]+"\n"
-        resultsMessage += "Total price: "+trip["saleTotal"]+"\n"
-        resultsMessage += "__________________________________________\n"
-    send_email(resultsMessage,subjectOriginCity,subjectDestinationCity,trip["saleTotal"])
+                    for city in city_list:
+                        if origin_airport_city == city["code"]:
+                            origin_city = city["name"]
+                        if destination_airport_city == city["code"]:
+                            destination_city = city["name"]
+                        if subject_origin_airport_city == city["code"]:
+                            subject_origin_city = city["name"]
+                        if subject_destination_airport_city == city["code"]:
+                            subject_destination_city = city["name"]
+                results_message.append("Origin: "+origin_city+" ("+leg["origin"]+") -> Destination: "+destination_city+" ("+leg["destination"]+")")
+                results_message.append("Departure time: "+leg["departureTime"])
+                results_message.append("Arrival time: "+leg["arrivalTime"])
+        results_message.append("Total price: "+trip["saleTotal"])
+        results_message.append("__________________________________________")
+
+        # Concatenate the list of result messages into a single string.
+        results_message_string = "\n".join(results_message)
+
+    send_email(results_message_string, subject_origin_city, 
+    	subject_destination_city, trip["saleTotal"])
 
 
 if __name__ == "__main__":
