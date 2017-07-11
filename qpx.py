@@ -54,6 +54,7 @@
     Alan        2017-05-23  Added the -x/--date option, which allows to look 
                             for specific dates.
     Alan        2017-06-30  Minor improvements
+    Alan        2017-07-10  Fixed a bug with date handling in round trips.
 '''
 
 # Mainly for path handling.
@@ -100,6 +101,14 @@ config_file = os.path.join("/opt", "qpx", "config.json")
 
 # Request headers.
 headers = {'content-type': 'application/json'}
+
+
+def valid_date(custom_date):
+    try:
+        return datetime.strptime(custom_date, "%Y-%m-%d").date()
+    except ValueError as exception:
+        msg = "Not a valid date: '{0} {1}'.".format(s, exception)
+        raise argparse.ArgumentTypeError(msg)
 
 
 def read_config():
@@ -161,6 +170,7 @@ def get_args(argv):
     parser.add_argument("-x","--date",
         help = "Departure date in YYYY-MM-DD",
         dest = "date",
+        type = valid_date,
         default = False,
         required = False)
     parser.add_argument("-D","--duration",
@@ -193,13 +203,13 @@ def get_args(argv):
     	args.solutions, args.adults, args.maxprice)
 
 
-def main(origin1, destination1, mydate, duration, delay, solutions, adults, 
-	max_price):
+def main(origin1, destination1, departure_date, duration, delay, solutions, 
+    adults, max_price):
     global results_message
 
-    if mydate:
+    if departure_date:
         # If an specific date was supplied, use it.
-        date1 = mydate
+        date1 = departure_date
     else:
         # If an specific travel date was not provided, use only the delay 
         # days counting from today().
