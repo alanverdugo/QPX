@@ -5,11 +5,18 @@
     match certain criteria.
 
  Usage:
-    python qpx.py [-h] -o ORIGIN -d DESTINATION [-D DURATION] [-t DELAY]
-        [-s SOLUTIONS] [-a ADULTS] -P MAXPRICE
-    Example:
+    qpx.py [-h] -o ORIGIN -d DESTINATION [-x DATE] [-D DURATION] [-t DELAY]
+              [-s SOLUTIONS] [-a ADULTS] -P MAXPRICE
+    Examples:
         python qpx.py --origin GDL --destination CUU --duration 30 --delay 30
         --solutions 3 --adult 1 --maxPrice USD55000
+
+        python /opt/qpx/qpx.py --origin GDL --destination NRT --duration 14 
+        --delay 60 --solutions 3 --adults 1 --maxprice MXN15000
+
+        (The following is a one-way trip from Guadalajara to Boston)
+        python /opt/qpx/qpx.py --origin GDL --destination BOS -x 2017-09-16 
+        --solutions 3 --adults 1 --maxprice MXN5000
 
  Arguments:
   -h, --help            show this help message and exit
@@ -17,6 +24,7 @@
                         Origin IATA airport code.
   -d DESTINATION, --destination DESTINATION
                         Destination IATA airport code.
+  -x DATE, --date DATE  Departure date in YYYY-MM-DD
   -D DURATION, --duration DURATION
                         The duration in days of the travel (for round trips).
                         Default is 7.
@@ -237,18 +245,21 @@ def main(origin1, destination1, departure_date, duration, delay, solutions,
         # Return date is departure date plus duration of travel.
         date2 = date1 + timedelta(days=int(duration))
         # Form the payload according to the arguments or default values.
-        payload = '{"request":{"passengers":{"adultCount":{0}},"slice":["\
-            "{"origin":"{1}","destination":"{2}","date":"{3}"},{"origin":"\
-            "{4}","destination":"{5}","date":"{6}"}],"maxPrice":"{7}"\
-            ","solutions":{8}}}'.format(adults, origin1, destination1, 
-                str(date1),origin2,destination2,str(date2),max_price,solutions)
+        # (The format() function will try to replace all braces as placeholders 
+        # so we need to escape the braces in JSON using double braces!!!)
+        payload = '''{{"request":{{"passengers":{{"adultCount":{0}}},
+            "slice":[{{"origin":"{1}","destination":"{2}","date":"{3}"}},
+            {{"origin":"{4}","destination":"{5}","date":"{6}"}}],
+            "maxPrice":"{7}","solutions":{8}}}}}'''.format(adults, origin1, 
+                destination1, str(date1), origin2, destination2, str(date2), 
+                max_price, solutions)
     else:
         # In case we are searching for a 1-way trip, the request will be formed
         # differently.
-        payload = '{"request":{"passengers":{"adultCount":{0}},"slice":[{"\
-            "origin":"{1}","destination":"{2}","date":"{3}"}],"maxPrice":"{4}"\
-            ","solutions":{5}}}'.format(adults, origin1, destination1, 
-                str(date1), max_price, solutions)
+        payload = '''{{"request":{{"passengers":{{"adultCount":{0}}},
+            "slice":[{{"origin":"{1}","destination":"{2}","date":"{3}"}}],
+            "maxPrice":"{4}","solutions":{5}}}}}'''.format(adults, origin1, 
+                destination1, str(date1), max_price, solutions)
 
     try:
         response = requests.post(google_url, data=payload, headers=headers)
