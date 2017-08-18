@@ -1,8 +1,5 @@
 #!/usr/bin/python
 '''
-
- Copyright (C) Alan Verdugo.
-
  Description:
     This program will use the Google QPX API to look for airplane tickets which 
     match certain criteria.
@@ -55,6 +52,9 @@
                             for specific dates.
     Alan        2017-06-30  Minor improvements
     Alan        2017-07-10  Fixed a bug with date handling in round trips.
+    Alan        2017-08-18  Improved concatenation for strings.
+                            Reformated lines longer than 80 characters.
+                            Replaced print statements with propper logging.
 '''
 
 # Mainly for path handling.
@@ -102,23 +102,34 @@ config_file = os.path.join("/opt", "qpx", "config.json")
 # Request headers.
 headers = {'content-type': 'application/json'}
 
+# Logging configuration.
+log = logging.getLogger("QPX")
+logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 def valid_date(custom_date):
+    '''
+        Used in the arguments parser to validate dates and avoid inputs like 
+        "2017-02-31".
+    '''
     try:
         return datetime.strptime(custom_date, "%Y-%m-%d").date()
     except ValueError as exception:
-        msg = "Not a valid date: '{0} {1}'.".format(s, exception)
-        raise argparse.ArgumentTypeError(msg)
+        raise argparse.ArgumentTypeError("Not a valid date"\
+            ": '{0} {1}'.".format(s, exception))
 
 
 def read_config():
-    # Open the config JSON file.
+    '''
+        Open the config JSON file.
+    '''
     try:
         config = open(config_file,"r+")
         readable_config = json.load(config)
         config.close()
     except Exception as exception:
-        print "ERROR: Unable to read configuration file.", config_file, exception
+        log.error("Unable to read configuration file. {0} Exception"\
+            ": {1}".format(config_file, exception))
         sys.exit(1)
     # TODO: Validate that the JSON config is in a valid JSON format.
     # Assign the configuration values to global variables.
@@ -135,11 +146,10 @@ def read_config():
     google_url = readable_config["QPX_URL"] + readable_config["API_KEY"]
 
 
-# TODO: Sent others kind of notifications (SMS?, Whatsapp?, Telegram?, A page?)
-
-
-# Send email with results.
 def send_email(results_message, origin_city, destination_city, sale_total):
+    '''
+        This function will send an email to the distribution list.
+    '''
     msg = MIMEText(results_message,"plain")
     email_subject = "Flights found: {0} to {1} for {2} or "\
     	"less".format(destination_city, origin_city, sale_total)
@@ -149,15 +159,19 @@ def send_email(results_message, origin_city, destination_city, sale_total):
         s.sendmail(email_from, email_to, msg.as_string())
         s.quit()
     except Exception as exception:
-        print "ERROR: Unable to send notification email.", exception
+        log.error("Unable to send notification email. Exception: "\
+            "{0}".format(exception))
         sys.exit(1)
     else:
-    	print "INFO: Success! Notification email sent to:", email_to
-    	print "Message:", results_message
-    	sys.exit(0)
+        log.info("Success! Notification email sent to: {0}".format(email_to))        
+        log.info("Message: {0}".format(results_message))
+        sys.exit(0)
 
 
 def get_args(argv):
+    '''
+        Get and parse arguments.
+    '''
     parser = argparse.ArgumentParser()
     parser.add_argument("-o","--origin",
         help = "Origin IATA airport code.",
@@ -223,38 +237,46 @@ def main(origin1, destination1, departure_date, duration, delay, solutions,
         # Return date is departure date plus duration of travel.
         date2 = date1 + timedelta(days=int(duration))
         # Form the payload according to the arguments or default values.
-        payload = '{"request":{"passengers":{"adultCount":'+adults+'},"slice":[{"origin":"'+origin1+'","destination":"'+destination1+'","date":"'+str(date1)+'"},{"origin":"'+origin2+'","destination":"'+destination2+'","date":"'+str(date2)+'"}],"maxPrice":"'+max_price+'","solutions":'+solutions+'}}'
+        payload = '{"request":{"passengers":{"adultCount":{0}},"slice":["\
+            "{"origin":"{1}","destination":"{2}","date":"{3}"},{"origin":"\
+            "{4}","destination":"{5}","date":"{6}"}],"maxPrice":"{7}"\
+            ","solutions":{8}}}'.format(adults, origin1, destination1, 
+                str(date1),origin2,destination2,str(date2),max_price,solutions)
     else:
         # In case we are searching for a 1-way trip, the request will be formed
         # differently.
-        payload = '{"request":{"passengers":{"adultCount":'+adults+'},"slice":[{"origin":"'+origin1+'","destination":"'+destination1+'","date":"'+str(date1)+'"}],"maxPrice":"'+max_price+'","solutions":'+solutions+'}}'
+        payload = '{"request":{"passengers":{"adultCount":{0}},"slice":[{"\
+            "origin":"{1}","destination":"{2}","date":"{3}"}],"maxPrice":"{4}"\
+            ","solutions":{5}}}'.format(adults, origin1, destination1, 
+                str(date1), max_price, solutions)
 
     try:
         response = requests.post(google_url, data=payload, headers=headers)
     except Exception as exception:
-        print "FATAL ERROR: Unable to execute request.", exception
+        log.error("Unable to execute request.".format(exception))
         sys.exit(1)
 
     # The status code should be 200 (success). Catch anything else and handle.
     if response.status_code != 200:
-        print "FATAL ERROR: The response status code is:", response.status_code, response.reason
+        log.error("The response status code is: {0} Reason: "\
+            "{1}".format(response.status_code, response.reason))
         sys.exit(1)
 
-    # Check if we don't have an empty result set.
+    # Check if we have an empty result set.
     try:
         readable_response = response.json()
     except ValueError:
-        print datetime.today(), "ERROR: Empty result set. Payload:", payload
+        log.error("Empty result set. Payload: {0}".format(payload))
         sys.exit(2)
 
-    # Check if there were no travel options returned.
+    # Check if there were travel options returned.
     try:
         carrier_list = readable_response["trips"]["data"]["carrier"]
         airport_list = readable_response["trips"]["data"]["airport"]
         city_list = readable_response["trips"]["data"]["city"]
     except KeyError:
-        print datetime.today(), "WARNING: There were no results found for "\
-        	"your request. Payload:", payload
+        log.warning("There were no results found for your request. "\
+            "Payload: {0}".format(payload))
         sys.exit(3)
 
     # Parse the response from the Google API.
@@ -267,7 +289,8 @@ def main(origin1, destination1, departure_date, duration, delay, solutions,
                 for carrier in carrier_list:
                     if carrier["code"]  == carrier_code:
                         carrier_name = carrier["name"]
-                results_message.append("Flight number: "+flight_number+" Carrier: "+carrier_name+" ("+carrier_code+")")
+                results_message.append("Flight number: {0} Carrier: {1} ({2})"\
+                    .format(flight_number, carrier_name, carrier_code))
                 for leg in segment["leg"]:
                     # Get all the NAMES of the airports that we need from 
                     # our list of airport CODES.
@@ -291,15 +314,20 @@ def main(origin1, destination1, departure_date, duration, delay, solutions,
                             subject_origin_city = city["name"]
                         if subject_destination_airport_city == city["code"]:
                             subject_destination_city = city["name"]
-                results_message.append("Origin: "+origin_city+" ("+leg["origin"]+") -> Destination: "+destination_city+" ("+leg["destination"]+")")
-                results_message.append("Departure time: "+leg["departureTime"])
-                results_message.append("Arrival time: "+leg["arrivalTime"])
-        results_message.append("Total price: "+trip["saleTotal"])
+                results_message.append("Origin: {0} ({1}) -> Destination: {2} "\
+                    "({3})".format(origin_city, leg["origin"], 
+                        destination_city, leg["destination"]))
+                results_message.append("Departure time: {0}"\
+                    .format(leg["departureTime"]))
+                results_message.append("Arrival time: {0}"\
+                    .format(leg["arrivalTime"]))
+        results_message.append("Total price: {0}".format(trip["saleTotal"]))
         results_message.append("__________________________________________")
 
         # Concatenate the list of result messages into a single string.
         results_message_string = "\n".join(results_message)
 
+    # Send email with the results.
     send_email(results_message_string, subject_origin_city, 
     	subject_destination_city, trip["saleTotal"])
 
