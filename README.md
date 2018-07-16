@@ -1,5 +1,8 @@
 # QPX
 
+## A note regarding the Google QPX API
+On April 10th, 2018, Google decided to stop supporting the QPX API. There is no good replacement for it and because of that, this program is unable to comsume the appropiate travel data, rendering it useless. I will keep the code here as it is, for documentation purposes and for reference in other projects.
+
 ## What does it do?
 This is a program that uses the QPX Google API in order to look for flights according to your specifications. It is pretty simple, but it served two main purposes: 1) Made me practice and improve my Python skills. 2) Allowed me to setup a search and let it run indifinively, until certain condition are met. When these conditions are met, the program would alert me so I can quickly book those sweet cheap tickets. I want to travel cheaply but still not wasting my time looking at those offers sites. I am a programmer, I do not want to waste my time if a computer can do the job for me.
 In other words, this program can be used to looks for cheap flights. You provide the criteria (number of passengers, origin and destination airport, price, etc.) and the program will start looking for matches, if and when it finds a match, the program will send an email with the details.
